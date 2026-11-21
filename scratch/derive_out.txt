@@ -1,0 +1,116 @@
+291 candidate arguments (canonical half-space)
+longitude K= 6: sin-only rms   5.48' max   20.6'   sin+cos rms   5.48' max   20.6'
+longitude K= 8: sin-only rms   4.24' max   15.5'   sin+cos rms   4.24' max   15.5'
+longitude K=10: sin-only rms   3.00' max   11.2'   sin+cos rms   3.00' max   11.2'
+longitude K=12: sin-only rms   1.93' max    8.4'   sin+cos rms   1.93' max    8.4'
+longitude K=14: sin-only rms   1.26' max    5.6'   sin+cos rms   1.26' max    5.6'
+longitude K=16: sin-only rms   1.04' max    4.2'   sin+cos rms   1.04' max    4.2'
+longitude K=18: sin-only rms   0.83' max    3.9'   sin+cos rms   0.83' max    3.9'
+longitude K=20: sin-only rms   0.68' max    3.1'   sin+cos rms   0.68' max    3.1'
+longitude K=24: sin-only rms   0.55' max    2.3'   sin+cos rms   0.55' max    2.3'
+lat/rad K= 4: lat rms  3.53' max  10.9'   rad rms  323.5 km max   1190 km
+lat/rad K= 6: lat rms  1.74' max   5.4'   rad rms  229.6 km max    759 km
+lat/rad K= 8: lat rms  0.76' max   2.9'   rad rms  163.8 km max    498 km
+lat/rad K=10: lat rms  0.54' max   2.1'   rad rms  111.6 km max    393 km
+lat/rad K=12: lat rms  0.37' max   1.6'   rad rms   60.3 km max    232 km
+
+### LONGITUDE (deg, added to L'):  rms 0.68'  max 3.1'   (20 terms)
+      +6.288491  sin(1*Mp)
+      +1.274096  sin(2*D -1*Mp)
+      +0.658315  sin(2*D)
+      +0.213221  sin(2*Mp)
+      +0.185940  sin(-1*M)
+      +0.114092  sin(-2*F)
+      +0.058471  sin(2*D -2*Mp)
+      +0.056971  sin(2*D -1*M -1*Mp)
+      +0.053316  sin(2*D +1*Mp)
+      +0.046478  sin(2*D -1*M)
+      +0.041281  sin(-1*M +1*Mp)
+      +0.034921  sin(-1*D)
+      +0.030889  sin(-1*M -1*Mp)
+      +0.015516  sin(2*D -2*F)
+      +0.012314  sin(-1*Mp -2*F)
+      +0.011263  sin(1*Mp -2*F)
+      +0.010619  sin(4*D -1*Mp)
+      +0.010268  sin(3*Mp)
+      +0.008780  sin(-2*D -1*M +1*Mp)
+      +0.007225  sin(-2*D -1*M)
+
+### LATITUDE (deg):  rms 0.54'  max 2.1'   (10 terms)
+      +5.127795  sin(1*F)
+      +0.280732  sin(1*Mp +1*F)
+      +0.277322  sin(1*Mp -1*F)
+      +0.173338  sin(2*D -1*F)
+      +0.055664  sin(2*D -1*Mp +1*F)
+      +0.046394  sin(2*D -1*Mp -1*F)
+      +0.032578  sin(2*D +1*F)
+      +0.017037  sin(2*Mp +1*F)
+      +0.009187  sin(2*D +1*Mp -1*F)
+      +0.008800  sin(2*Mp -1*F)
+
+radius: rms 60.3 km max 232.1 km
+     -20905.580  cos(1*Mp)
+      -3698.597  cos(2*D -1*Mp)
+      -2956.568  cos(2*D)
+       -567.686  cos(2*Mp)
+       +246.633  cos(2*D -2*Mp)
+       -207.305  cos(2*D -1*M)
+       -171.845  cos(2*D +1*Mp)
+       -149.349  cos(2*D -1*M -1*Mp)
+       -128.805  cos(1*M -1*Mp)
+       +110.184  cos(1*D)
+       +106.790  cos(1*M +1*Mp)
+        +78.919  cos(1*Mp -2*F)
+
+=== paste-ready literals ===
+LUNAR_LON_TERMS = [
+    (0, 0, 1, 0, +6.288491),  # sin(1*Mp)
+    (2, 0, -1, 0, +1.274096),  # sin(2*D -1*Mp)
+    (2, 0, 0, 0, +0.658315),  # sin(2*D)
+    (0, 0, 2, 0, +0.213221),  # sin(2*Mp)
+    (0, -1, 0, 0, +0.185940),  # sin(-1*M)
+    (0, 0, 0, -2, +0.114092),  # sin(-2*F)
+    (2, 0, -2, 0, +0.058471),  # sin(2*D -2*Mp)
+    (2, -1, -1, 0, +0.056971),  # sin(2*D -1*M -1*Mp)
+    (2, 0, 1, 0, +0.053316),  # sin(2*D +1*Mp)
+    (2, -1, 0, 0, +0.046478),  # sin(2*D -1*M)
+    (0, -1, 1, 0, +0.041281),  # sin(-1*M +1*Mp)
+    (-1, 0, 0, 0, +0.034921),  # sin(-1*D)
+    (0, -1, -1, 0, +0.030889),  # sin(-1*M -1*Mp)
+    (2, 0, 0, -2, +0.015516),  # sin(2*D -2*F)
+    (0, 0, -1, -2, +0.012314),  # sin(-1*Mp -2*F)
+    (0, 0, 1, -2, +0.011263),  # sin(1*Mp -2*F)
+    (4, 0, -1, 0, +0.010619),  # sin(4*D -1*Mp)
+    (0, 0, 3, 0, +0.010268),  # sin(3*Mp)
+    (-2, -1, 1, 0, +0.008780),  # sin(-2*D -1*M +1*Mp)
+    (-2, -1, 0, 0, +0.007225),  # sin(-2*D -1*M)
+]
+LUNAR_LAT_TERMS = [
+    (0, 0, 0, 1, +5.127795),  # sin(1*F)
+    (0, 0, 1, 1, +0.280732),  # sin(1*Mp +1*F)
+    (0, 0, 1, -1, +0.277322),  # sin(1*Mp -1*F)
+    (2, 0, 0, -1, +0.173338),  # sin(2*D -1*F)
+    (2, 0, -1, 1, +0.055664),  # sin(2*D -1*Mp +1*F)
+    (2, 0, -1, -1, +0.046394),  # sin(2*D -1*Mp -1*F)
+    (2, 0, 0, 1, +0.032578),  # sin(2*D +1*F)
+    (0, 0, 2, 1, +0.017037),  # sin(2*Mp +1*F)
+    (2, 0, 1, -1, +0.009187),  # sin(2*D +1*Mp -1*F)
+    (0, 0, 2, -1, +0.008800),  # sin(2*Mp -1*F)
+]
+LUNAR_RAD_TERMS = [
+    (0, 0, 1, 0, -20905.580),  # cos(1*Mp)
+    (2, 0, -1, 0, -3698.597),  # cos(2*D -1*Mp)
+    (2, 0, 0, 0, -2956.568),  # cos(2*D)
+    (0, 0, 2, 0, -567.686),  # cos(2*Mp)
+    (2, 0, -2, 0, +246.633),  # cos(2*D -2*Mp)
+    (2, -1, 0, 0, -207.305),  # cos(2*D -1*M)
+    (2, 0, 1, 0, -171.845),  # cos(2*D +1*Mp)
+    (2, -1, -1, 0, -149.349),  # cos(2*D -1*M -1*Mp)
+    (0, 1, -1, 0, -128.805),  # cos(1*M -1*Mp)
+    (1, 0, 0, 0, +110.184),  # cos(1*D)
+    (0, 1, 1, 0, +106.790),  # cos(1*M +1*Mp)
+    (0, 0, 1, -2, +78.919),  # cos(1*Mp -2*F)
+]
+
+wrote scratch/lunar_reference.json (60 epochs)
+current shipped ephemeris angular error: rms 126.02' max 332.14'

@@ -1,0 +1,159 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Where do you fish?",
+        "description": "Search for a place by name. Leave this empty to enter coordinates instead.",
+        "data": { "place": "Place name" }
+      },
+      "pick": {
+        "title": "Which place?",
+        "description": "Choose the closest match, or enter coordinates yourself.",
+        "data": { "place": "Place" }
+      },
+      "manual": {
+        "title": "Coordinates",
+        "description": "The forecast is computed for exactly this point.",
+        "data": { "latitude": "Latitude", "longitude": "Longitude" }
+      },
+      "spot": {
+        "title": "Describe the water",
+        "description": "The defaults suit a small lake. The more accurate this is, the better the forecast.",
+        "data": {
+          "name": "Name of the spot",
+          "spot_kind": "Kind of water",
+          "water_body": "Water body size",
+          "tidal": "Tidal water",
+          "tide_range_m": "Tidal range",
+          "catchment": "Surrounding land",
+          "elevation": "Elevation",
+          "pressure_source": "Barometric pressure",
+          "water_temp_entity": "Water temperature sensor"
+        },
+        "data_description": {
+          "water_body": "How big and deep the water is decides how fast it warms and cools.",
+          "tide_range_m": "Typical difference between high and low water. Only used for tidal water.",
+          "catchment": "How quickly the land turns rain into muddy water.",
+          "elevation": "Leave empty to use the elevation of the weather model.",
+          "pressure_source": "Sea-level pressure suits most spots. Use station pressure only if you will rely on a local barometer.",
+          "water_temp_entity": "Optional. A real probe sets the water temperature; the model still supplies the trend."
+        }
+      },
+      "species": {
+        "title": "What are you fishing for?",
+        "description": "You can change this later from the species selector.",
+        "data": { "species": "Target species" }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the place search. Check the internet connection and try again.",
+      "no_results": "No place found with that name. Try another spelling, or leave it empty to enter coordinates."
+    },
+    "abort": {
+      "already_configured": "A spot at these coordinates is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Spot settings",
+        "data": {
+          "species": "Target species",
+          "spot_kind": "Kind of water",
+          "water_body": "Water body size",
+          "tidal": "Tidal water",
+          "tide_range_m": "Tidal range",
+          "catchment": "Surrounding land",
+          "elevation": "Elevation",
+          "pressure_source": "Barometric pressure",
+          "water_temp_entity": "Water temperature sensor"
+        }
+      },
+      "shelter": {
+        "title": "Shelter from the wind",
+        "description": "How exposed is the bank to wind from each direction? 0 is fully sheltered, 1 is open water with a long fetch.",
+        "data": {
+          "N": "From the north",
+          "NE": "From the north-east",
+          "E": "From the east",
+          "SE": "From the south-east",
+          "S": "From the south",
+          "SW": "From the south-west",
+          "W": "From the west",
+          "NW": "From the north-west",
+          "bank_aspect_deg": "Direction the bank faces"
+        },
+        "data_description": {
+          "bank_aspect_deg": "Compass bearing in degrees, towards the water. Optional; used to tell an onshore wind from an offshore one."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "score": { "name": "Score" },
+      "confidence": { "name": "Confidence" },
+      "water_temperature": { "name": "Water temperature" },
+      "pressure_tendency": { "name": "Pressure tendency" },
+      "forecast": { "name": "Forecast peak" },
+      "best_window": { "name": "Next best window" }
+    },
+    "binary_sensor": {
+      "feeding_time": { "name": "Feeding time" },
+      "stale_data": { "name": "Stale data" }
+    },
+    "select": {
+      "species": { "name": "Target species" }
+    }
+  },
+  "selector": {
+    "spot_kind": {
+      "options": {
+        "lake": "Lake",
+        "reservoir": "Reservoir",
+        "river": "River",
+        "stream": "Stream",
+        "estuary": "Estuary",
+        "coast": "Coast"
+      }
+    },
+    "water_body": {
+      "options": {
+        "ephemeral_ditch": "Ditch or very shallow water",
+        "small_pond": "Small pond",
+        "shallow_stream": "Shallow stream",
+        "wetland_flat": "Wetland or shallow flat",
+        "river": "River",
+        "lake_small": "Small lake",
+        "reservoir": "Reservoir",
+        "lake_large": "Large lake",
+        "estuary": "Estuary",
+        "coastal_sea": "Coastal sea",
+        "open_sea": "Open sea"
+      }
+    },
+    "catchment": {
+      "options": {
+        "forest_sandy": "Forest or sandy soil (slow, clear)",
+        "peat_bog": "Peat or bog",
+        "chalk_karst": "Chalk or limestone",
+        "mixed_farmland": "Mixed farmland",
+        "clay_drained": "Clay, drained fields",
+        "urban_storm": "Urban, storm drains (fast, muddy)",
+        "mountain_steep": "Steep mountain slopes"
+      }
+    },
+    "pressure_source": {
+      "options": {
+        "mslp": "Sea-level pressure (recommended)",
+        "station": "Station pressure"
+      }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Refresh",
+      "description": "Fetch the latest weather now and re-score every fishing spot."
+    }
+  }
+}

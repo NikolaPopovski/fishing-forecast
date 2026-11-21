@@ -1,0 +1,11 @@
+scratch/venv/
+__pycache__/
+*.pyc
+scratch/*.json
+.claude/
+scratch/ha-venv/
+scratch/py314/
+scratch/ha-wheel/
+scratch/ha-src/
+dist/
+scratch/ha314/
