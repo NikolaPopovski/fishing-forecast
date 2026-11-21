@@ -135,7 +135,23 @@ class HacsReadinessTest(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("fishing_make_icon", ROOT / "scripts" / "make_icon.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        self.assertEqual(module.png(module.render()), icon, "run `python scripts/make_icon.py` to regenerate the icon")
+        # compare the decoded pixels, not the file: the compressed stream differs between zlib builds
+        # (the CI runner's Python links a different zlib than a laptop's), the picture does not
+        self.assertEqual(self.pixels(icon), b"".join(b"\x00" + row for row in module.render()), "run `python scripts/make_icon.py` to regenerate the icon")
+
+    @staticmethod
+    def pixels(data: bytes) -> bytes:
+        """The decompressed scanlines (filter byte + RGBA) of a PNG."""
+        import struct
+        import zlib
+
+        pos, idat = 8, b""
+        while pos < len(data):
+            length, kind = struct.unpack(">I4s", data[pos:pos + 8])
+            if kind == b"IDAT":
+                idat += data[pos + 8:pos + 8 + length]
+            pos += 12 + length
+        return zlib.decompress(idat)
 
     def test_the_icon_ships_in_the_package(self):
         with tempfile.TemporaryDirectory() as tmp:
