@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass
-from homeassistant.const import PERCENTAGE, UnitOfTemperature
+from homeassistant.const import DEGREE, PERCENTAGE, UnitOfSpeed, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -85,6 +85,26 @@ SENSORS: tuple[FishingSensorDescription, ...] = (
         suggested_display_precision=1,
         value_fn=lambda d: _get(d, "pressure", "tendency_3h"),
         attrs_fn=lambda d: dict(d.get("pressure") or {}),
+    ),
+    FishingSensorDescription(
+        key="wind_speed",
+        translation_key="wind_speed",
+        device_class=SensorDeviceClass.WIND_SPEED,
+        native_unit_of_measurement=UnitOfSpeed.METERS_PER_SECOND,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda d: _get(d, "wind", "speed"),
+        attrs_fn=lambda d: {"direction": _get(d, "wind", "direction"), "cardinal": _get(d, "wind", "cardinal")},
+    ),
+    FishingSensorDescription(
+        key="wind_direction",
+        translation_key="wind_direction",
+        device_class=SensorDeviceClass.WIND_DIRECTION,
+        native_unit_of_measurement=DEGREE,
+        state_class=SensorStateClass.MEASUREMENT_ANGLE,
+        suggested_display_precision=0,
+        value_fn=lambda d: _get(d, "wind", "direction"),
+        attrs_fn=lambda d: {"cardinal": _get(d, "wind", "cardinal"), "from": "the direction the wind blows from"},
     ),
     FishingSensorDescription(
         key="forecast",

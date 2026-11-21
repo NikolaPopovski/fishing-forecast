@@ -146,6 +146,15 @@ class BuildContextTest(unittest.TestCase):
         self.assertIsInstance(clim, cl.Climatology)
 
 
+class CompassTest(unittest.TestCase):
+    def test_sixteen_points_with_the_boundaries_half_way_between(self):
+        point = snapshot.compass_point
+        self.assertEqual([point(d) for d in (0, 11.24, 11.25, 22.5, 45, 90, 135, 180, 225, 270, 315)], ["N", "N", "NNE", "NNE", "NE", "E", "SE", "S", "SW", "W", "NW"])
+        self.assertEqual([point(d) for d in (348.74, 348.75, 359.9, 360, 720, -10)], ["NNW", "N", "N", "N", "N", "N"])
+        self.assertEqual(len(set(point(i * 22.5) for i in range(16))), 16)        # every point is reachable
+        self.assertIsNone(point(None))
+
+
 class SnapshotTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -175,6 +184,18 @@ class SnapshotTest(unittest.TestCase):
         self.assertEqual(self.snap["water"]["source"], "model")          # no probe, no SST at an inland point
         self.assertIsNotNone(self.snap["pressure"]["value"])
         self.assertTrue(940 < self.snap["pressure"]["value"] < 1060)
+
+    def test_the_wind_is_reported_with_its_direction_and_compass_point(self):
+        wind = self.snap["wind"]
+        self.assertTrue(0.0 <= wind["speed"] < 40.0)                              # m/s
+        self.assertTrue(0 <= wind["direction"] < 360)                             # degrees, the direction it blows from
+        self.assertEqual(wind["cardinal"], snapshot.compass_point(wind["direction"]))
+        self.assertEqual(wind["speed"], self.ctx.get("wind_speed")[[t for t, _ in self.ctx.get("wind_speed")].index(NOW)][1])
+
+    def test_no_wind_data_gives_none_not_zero(self):
+        bare = spot.build_context(spot.SpotConfig.from_entry(entry()), om.Forecast(series={}, timezone="UTC"), now=NOW)
+        wind = snapshot.compute(bare, NOW, "pike", hours=3)["wind"]
+        self.assertEqual(wind, {"speed": None, "direction": None, "cardinal": None})
 
     def test_the_forecast_curve_covers_48_hours_from_now(self):
         fc = self.snap["forecast"]

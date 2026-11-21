@@ -38,9 +38,24 @@ async def test_setup_loads_the_entry_and_creates_every_entity(hass: HomeAssistan
     registry = er.async_get(hass)
     entities = [e for e in registry.entities.values() if e.config_entry_id == entry.entry_id]
     assert {e.unique_id.removeprefix(f"{entry.entry_id}_") for e in entities} == {
-        "score", "confidence", "water_temperature", "pressure_tendency", "forecast", "best_window",
-        "feeding_time", "stale_data", "species",
+        "score", "confidence", "water_temperature", "pressure_tendency", "wind_speed", "wind_direction",
+        "forecast", "best_window", "feeding_time", "stale_data", "species",
     }
+
+
+async def test_the_wind_sensors_report_speed_and_direction_with_the_right_classes(hass: HomeAssistant, open_meteo):
+    entry = await setup(hass)
+    speed = hass.states.get(entity_id(hass, entry, "sensor", "wind_speed"))
+    assert speed.attributes["device_class"] == "wind_speed"
+    assert speed.attributes["unit_of_measurement"] in ("m/s", "km/h", "mph", "kn", "ft/s", "Beaufort")      # HA may convert for the user
+    assert 0.0 <= float(speed.state) < 150.0
+    direction = hass.states.get(entity_id(hass, entry, "sensor", "wind_direction"))
+    assert direction.attributes["device_class"] == "wind_direction"
+    assert direction.attributes["state_class"] == "measurement_angle"
+    assert direction.attributes["unit_of_measurement"] == "°"
+    assert 0 <= float(direction.state) < 360
+    assert direction.attributes["cardinal"] in ("N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW")
+    assert speed.attributes["direction"] == float(direction.state) or float(speed.attributes["direction"]) == float(direction.state)
 
 
 async def test_the_score_sensor_reports_a_real_score_with_advice(hass: HomeAssistant, open_meteo):

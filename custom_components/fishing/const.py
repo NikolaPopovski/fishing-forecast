@@ -6,7 +6,7 @@ from datetime import timedelta
 DOMAIN = "fishing"
 NAME = "Fishing Forecast"
 #: one version for the integration (manifest.json) and the card (www/fishing-card.js inside the integration): a test keeps them equal
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 # -- config entry keys (data = what the user chose at setup; options = what they may change) --
 CONF_NAME = "name"

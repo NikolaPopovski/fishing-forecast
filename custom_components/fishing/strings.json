@@ -95,6 +95,8 @@
       "confidence": { "name": "Confidence" },
       "water_temperature": { "name": "Water temperature" },
       "pressure_tendency": { "name": "Pressure tendency" },
+      "wind_speed": { "name": "Wind speed" },
+      "wind_direction": { "name": "Wind direction" },
       "forecast": { "name": "Forecast peak" },
       "best_window": { "name": "Next best window" }
     },

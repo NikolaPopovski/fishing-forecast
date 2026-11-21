@@ -73,6 +73,8 @@ function makeHass(overrides = {}) {
     "sensor.test_mark_confidence": stateOf(75, { coverage: 1.0, unit_of_measurement: "%" }),
     "sensor.test_mark_water_temperature": stateOf(6.4, { source: "model", trend: "steady", change_24h: -1.1, unit_of_measurement: "°C" }),
     "sensor.test_mark_pressure_tendency": stateOf(-1.01, { trend: "falling", unit_of_measurement: "hPa/3h" }),
+    "sensor.test_mark_wind_speed": stateOf(3.4, { unit_of_measurement: "m/s", direction: 225, cardinal: "SW", device_class: "wind_speed" }),
+    "sensor.test_mark_wind_direction": stateOf(225, { unit_of_measurement: "°", cardinal: "SW", device_class: "wind_direction" }),
     "sensor.test_mark_forecast_peak": stateOf(6.1, { forecast: POINTS, best_windows: [{ start: POINTS[20].time, end: POINTS[23].time, peak_score: 6.1, start_utc: "2026-11-22T08:00:00+00:00", end_utc: "2026-11-22T09:00:00+00:00" }] }),
     "sensor.test_mark_next_best_window": stateOf("2026-11-22T08:00:00+00:00", { end_utc: "2026-11-22T09:00:00+00:00", start: POINTS[20].time }),
     "binary_sensor.test_mark_feeding_time": stateOf("off", {}),
@@ -527,4 +529,122 @@ test("card size, grid options and the stub config", () => {
   assert.equal(Card.getStubConfig(makeHass()).entity, "sensor.test_mark_score");
   assert.equal(Card.getStubConfig({ states: {} }).entity, "sensor.my_spot_score");
   assert.equal(Card.getStubConfig(null).entity, "sensor.my_spot_score");
+});
+
+// ---- wind ---------------------------------------------------------------------------------
+
+test("the compass has sixteen points with boundaries half-way between them", () => {
+  const c = logic.compass;
+  assert.deepEqual(plain([0, 11.24, 11.25, 45, 90, 180, 225, 270, 315, 348.74, 348.75, 360, -10].map(c)),
+    ["N", "N", "NNE", "NE", "E", "S", "SW", "W", "NW", "NNW", "N", "N", "N"]);
+  assert.equal(new Set(Array.from({ length: 16 }, (_, i) => c(i * 22.5))).size, 16);
+  assert.equal(c(null), null);
+  assert.equal(c("x"), null);
+  assert.equal(logic.compassWords(225), "southwest");
+  assert.equal(logic.compassWords(null), null);
+});
+
+test("the wind sensors are found through the device and by name", () => {
+  const registry = makeHass({
+    entities: {
+      "sensor.test_mark_score": { device_id: "d1", translation_key: "score" },
+      "sensor.my_wind": { device_id: "d1", translation_key: "wind_speed" },
+      "sensor.my_bearing": { device_id: "d1", translation_key: "wind_direction" },
+    },
+  });
+  const ids = logic.findEntities(registry, "sensor.test_mark_score");
+  assert.equal(ids.wind_speed, "sensor.my_wind");
+  assert.equal(ids.wind_direction, "sensor.my_bearing");
+  const byName = logic.findEntities(makeHass(), "sensor.test_mark_score");
+  assert.equal(byName.wind_speed, "sensor.test_mark_wind_speed");
+  assert.equal(byName.wind_direction, "sensor.test_mark_wind_direction");
+});
+
+test("the view model carries speed, unit, bearing and compass point", () => {
+  const w = logic.viewModel(makeHass(), cfg(), NOW).wind;
+  assert.equal(w.speed, 3.4);
+  assert.equal(w.unit, "m/s");
+  assert.equal(w.direction, 225);
+  assert.equal(w.cardinal, "SW");
+  assert.equal(w.words, "southwest");
+});
+
+test("the speed is shown in whatever unit Home Assistant converted it to", () => {
+  const hass = makeHass({ states: { "sensor.test_mark_wind_speed": stateOf(12.2, { unit_of_measurement: "km/h" }) } });
+  assert.equal(logic.viewModel(hass, cfg(), NOW).wind.unit, "km/h");
+  assert.match(html(hass), /12\.2 km\/h/);
+});
+
+test("north is 0 degrees, a real bearing, not a missing value", () => {
+  const hass = makeHass({ states: { "sensor.test_mark_wind_direction": stateOf(0, {}) } });
+  const w = logic.viewModel(hass, cfg(), NOW).wind;
+  assert.equal(w.direction, 0);
+  assert.equal(w.cardinal, "N");
+  assert.match(html(hass), /rotate\(180deg\)/);                          // wind from the north blows towards the south
+});
+
+test("the speed sensor's own direction attribute is used when there is no direction sensor", () => {
+  const hass = makeHass({ remove: { "sensor.test_mark_wind_direction": 1 } });
+  const w = logic.viewModel(hass, cfg(), NOW).wind;
+  assert.equal(w.direction, 225);
+  assert.equal(w.cardinal, "SW");
+});
+
+test("the direction sensor wins over the attribute", () => {
+  const hass = makeHass({ states: { "sensor.test_mark_wind_direction": stateOf(90, {}) } });
+  assert.equal(logic.viewModel(hass, cfg(), NOW).wind.cardinal, "E");
+});
+
+test("no wind information at all means no wind chip, not a zero", () => {
+  const hass = makeHass({ remove: { "sensor.test_mark_wind_speed": 1, "sensor.test_mark_wind_direction": 1 } });
+  assert.equal(logic.viewModel(hass, cfg(), NOW).wind, null);
+  assert.doesNotMatch(html(hass), /class="windarrow"|title="Wind"/);
+  const unavailable = makeHass({ states: { "sensor.test_mark_wind_speed": stateOf("unavailable", {}), "sensor.test_mark_wind_direction": stateOf("unknown", {}) } });
+  assert.equal(logic.viewModel(unavailable, cfg(), NOW).wind, null);
+});
+
+test("the chip shows speed, compass point and degrees, with an arrow pointing the way the wind blows", () => {
+  const out = html();
+  assert.match(out, /title="Wind"/);
+  assert.match(out, /3\.4 m\/s<\/strong> SW 225°/);
+  assert.match(out, /class="windarrow"[^>]*rotate\(45deg\)/);            // from the south-west -> blowing to the north-east
+});
+
+test("the chip is spoken in words, not as 'SW'", () => {
+  assert.match(html(), /aria-label="Wind 3\.4 m\/s from the southwest, 225 degrees"/);
+});
+
+test("the arrow turns with the bearing", () => {
+  const rotation = (deg) => html(makeHass({ states: { "sensor.test_mark_wind_direction": stateOf(deg, {}) } })).match(/windarrow"[^>]*rotate\((\d+)deg\)/)[1];
+  assert.deepEqual(plain([0, 90, 180, 270, 359.6].map(rotation)), ["180", "270", "0", "90", "180"]);
+});
+
+test("speed alone shows no arrow, direction alone shows the compass point", () => {
+  const speedOnly = html(makeHass({ remove: { "sensor.test_mark_wind_direction": 1 }, states: { "sensor.test_mark_wind_speed": stateOf(3.4, { unit_of_measurement: "m/s" }) } }));
+  assert.match(speedOnly, /3\.4 m\/s/);
+  assert.doesNotMatch(speedOnly, /class="windarrow"|degrees/);
+  const dirOnly = html(makeHass({ remove: { "sensor.test_mark_wind_speed": 1 } }));
+  assert.match(dirOnly, /<strong>SW 225°<\/strong>/);
+  assert.match(dirOnly, /class="windarrow"/);
+});
+
+test("the wind chip can be switched off and survives the compact and kiosk views", () => {
+  assert.doesNotMatch(html(makeHass(), { show_wind: false }), /title="Wind"/);
+  assert.match(html(makeHass(), { view: "compact" }), /title="Wind"/);
+  assert.match(html(makeHass(), { view: "kiosk" }), /title="Wind"/);
+  assert.equal(cfg().show_wind, true);
+});
+
+test("a hostile unit or attribute cannot inject markup through the wind chip", () => {
+  const evil = `<img src=x onerror=alert(1)>`;
+  const out = html(makeHass({ states: { "sensor.test_mark_wind_speed": stateOf(3.4, { unit_of_measurement: evil }), "sensor.test_mark_wind_direction": stateOf(225, { cardinal: evil }) } }));
+  assert.doesNotMatch(out, /<img/);
+  assert.match(out, /&lt;img src=x onerror=alert\(1\)&gt;/);
+});
+
+test("nonsense bearings never throw", () => {
+  for (const bad of ["abc", "", null, 1e9, -1e9, NaN]) {
+    const hass = makeHass({ states: { "sensor.test_mark_wind_direction": stateOf(bad, {}) } });
+    assert.doesNotThrow(() => html(hass), String(bad));
+  }
 });

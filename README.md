@@ -22,6 +22,8 @@ One config entry is one fishing spot, shown as one device with these entities:
 | **Confidence** (sensor) | How much of the usual data the score is built on, in percent |
 | **Water temperature** (sensor) | Probe reading if you give it one, else sea-surface temperature, else a heat-budget model; says which |
 | **Pressure tendency** (sensor) | hPa per 3 h, corrected for the daily pressure tide, with the trend and any front |
+| **Wind speed** (sensor) | Wind at the spot, in your unit system (the direction is in its attributes) |
+| **Wind direction** (sensor) | The bearing the wind blows *from*, in degrees, with the compass point as an attribute |
 | **Forecast peak** (sensor) | The best score in the next 48 h; the hourly curve is in its attributes |
 | **Next best window** (sensor) | When the next good spell starts (a timestamp) |
 | **Feeding time** (binary sensor) | On inside a solunar window or golden hour when conditions are at least fair |
@@ -82,9 +84,10 @@ Options:
 | `view` | `default` | `default`, `compact` (gauge and headline only) or `kiosk` (large, no controls) |
 | `hours` | `48` | Length of the forecast sparkline, 6-48 |
 | `name` | spot name | Title override |
-| `show_forecast`, `show_factors`, `show_advice`, `show_water`, `show_species_selector`, `show_details` | `true` | Switch sections off |
+| `show_forecast`, `show_factors`, `show_advice`, `show_water`, `show_wind`, `show_species_selector`, `show_details` | `true` | Switch sections off |
 
-The card shows the score and band word, confidence, water temperature with its source, the next best window
+The card shows the score and band word, confidence, water temperature with its source, the wind (speed, compass
+point and degrees, with an arrow pointing the way it is blowing), the next best window
 (with a countdown), a sparkline with the best windows shaded, the top factors with their reasons, advice, and a
 "Why this score" table. It says so when data is stale or confidence is low, and lists what is missing.
 

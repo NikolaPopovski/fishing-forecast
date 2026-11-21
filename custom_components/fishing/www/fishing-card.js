@@ -14,6 +14,7 @@
  *   show_factors: true
  *   show_advice: true
  *   show_water: true
+ *   show_wind: true                     # wind speed and the direction it blows from
  *   show_species_selector: true
  *   show_details: true
  *
@@ -24,7 +25,7 @@
 (() => {
   "use strict";
 
-  const VERSION = "0.1.0";
+  const VERSION = "0.1.1";
   const TAG = "fishing-card";
 
   // ---------------------------------------------------------------------------------------
@@ -68,6 +69,16 @@
   GAUGE.length = Math.PI * GAUGE.r;
   GAUGE.path = `M ${GAUGE.cx - GAUGE.r} ${GAUGE.cy} A ${GAUGE.r} ${GAUGE.r} 0 0 1 ${GAUGE.cx + GAUGE.r} ${GAUGE.cy}`;
   const gaugeFill = (score) => (isNum(score) ? (clamp(score, 0, 10) / 10) * GAUGE.length : 0);
+
+  /** 16-point compass; a bearing is the direction the wind blows FROM, as in every weather report. */
+  const COMPASS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+  const COMPASS_WORDS = [
+    "north", "north-northeast", "northeast", "east-northeast", "east", "east-southeast", "southeast", "south-southeast",
+    "south", "south-southwest", "southwest", "west-southwest", "west", "west-northwest", "northwest", "north-northwest",
+  ];
+  const compassIndex = (deg) => (isNum(deg) ? Math.floor((((deg % 360) + 360) % 360 + 11.25) / 22.5) % 16 : null);
+  const compass = (deg) => (compassIndex(deg) === null ? null : COMPASS[compassIndex(deg)]);
+  const compassWords = (deg) => (compassIndex(deg) === null ? null : COMPASS_WORDS[compassIndex(deg)]);
 
   /** "2026-11-21T13:00:00" (the spot's wall clock, no zone) as a Date that prints the same digits in UTC. */
   function parseWallClock(text) {
@@ -162,11 +173,13 @@
   }
 
   /** The integration's entities, found through the score sensor's device (with a naming fallback). */
-  const KEYS = ["score", "confidence", "water_temperature", "pressure_tendency", "forecast", "best_window", "feeding_time", "stale_data", "species"];
+  const KEYS = ["score", "confidence", "water_temperature", "pressure_tendency", "wind_speed", "wind_direction", "forecast", "best_window", "feeding_time", "stale_data", "species"];
   const SUFFIXES = {
     confidence: ["sensor", "confidence"],
     water_temperature: ["sensor", "water_temperature"],
     pressure_tendency: ["sensor", "pressure_tendency"],
+    wind_speed: ["sensor", "wind_speed"],
+    wind_direction: ["sensor", "wind_direction"],
     forecast: ["sensor", "forecast_peak"],
     best_window: ["sensor", "next_best_window"],
     feeding_time: ["binary_sensor", "feeding_time"],
@@ -203,6 +216,7 @@
     show_factors: true,
     show_advice: true,
     show_water: true,
+    show_wind: true,
     show_species_selector: true,
     show_details: true,
   };
@@ -250,6 +264,11 @@
     const water = waterState && toNum(waterState.state) !== null ? waterState : null;
     const waterAttrs = (waterState && waterState.attributes) || {};
     const pressureState = st("pressure_tendency");
+    const windSpeedState = st("wind_speed");
+    const windDirState = st("wind_direction");
+    const windSpeed = windSpeedState ? toNum(windSpeedState.state) : null;
+    // the direction sensor wins; the speed sensor carries a copy as an attribute for installs that only have that one
+    const windDir = (windDirState && toNum(windDirState.state)) ?? (windSpeedState ? toNum((windSpeedState.attributes || {}).direction) : null);
     const forecastState = st("forecast");
     const fa = (forecastState && forecastState.attributes) || {};
     const bestState = st("best_window");
@@ -286,6 +305,13 @@
         sourceLabel: SOURCE_LABELS[waterAttrs.source] || SOURCE_LABELS.model,
         trend: waterAttrs.trend || "",
         change24h: toNum(waterAttrs.change_24h),
+      },
+      wind: windSpeed === null && windDir === null ? null : {
+        speed: windSpeed,
+        unit: (windSpeedState && windSpeedState.attributes && windSpeedState.attributes.unit_of_measurement) || "m/s",
+        direction: windDir,
+        cardinal: compass(windDir),
+        words: compassWords(windDir),
       },
       pressure: pressureState && toNum(pressureState.state) !== null ? { tendency: toNum(pressureState.state), trend: (pressureState.attributes || {}).trend || "" } : null,
       spark: sparkline(points, asArray(fa.best_windows), 300, 64),
@@ -329,6 +355,7 @@
     .meter > span { display: block; height: 100%; background: var(--band); }
     .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--secondary-text-color); font-size: .9em; }
     .chip { display: inline-flex; align-items: center; gap: 4px; }
+    .windarrow { flex: none; }
     .badge { font-size: .75em; border: 1px solid var(--divider-color, #ccc); border-radius: 10px; padding: 0 6px; color: var(--secondary-text-color); }
     .next { margin-top: 8px; font-weight: 500; color: var(--primary-text-color); }
     .next.now { color: var(--band); }
@@ -369,6 +396,24 @@
       </svg>
       <div class="bandword">${esc(vm.band ? vm.band.label : "No data")}</div>
     </div>`;
+  }
+
+  /**
+   * Wind chip: an arrow pointing the way the wind is BLOWING (a bearing is where it comes from, so the arrow
+   * is turned 180 degrees from it), then the speed, then the compass name and the bearing in degrees. The
+   * words are for screen readers, which read "SW" badly.
+   */
+  function renderWind(vm) {
+    const w = vm.wind;
+    const hasSpeed = isNum(w.speed);
+    const hasDir = isNum(w.direction);
+    const speedText = hasSpeed ? `${formatNumber(w.speed, vm.locale)} ${w.unit}` : "";
+    const dirText = hasDir ? `${w.cardinal} ${formatNumber(w.direction, vm.locale, 0)}°` : "";
+    const spoken = `Wind${hasSpeed ? ` ${speedText}` : ""}${hasDir ? ` from the ${w.words}, ${formatNumber(w.direction, vm.locale, 0)} degrees` : ""}`;
+    const arrow = hasDir
+      ? `<svg class="windarrow" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="transform:rotate(${(Math.round(w.direction) + 180) % 360}deg)"><path d="M12 2 L19 20 L12 16 L5 20 Z" fill="currentColor"/></svg>`
+      : "&#127788;&#65039;";
+    return `<span class="chip" title="Wind" role="img" aria-label="${esc(spoken)}">${arrow} <strong>${esc(speedText || dirText)}</strong>${hasSpeed && hasDir ? ` ${esc(dirText)}` : ""}</span>`;
   }
 
   function renderSpark(vm, config) {
@@ -464,7 +509,7 @@
           <div>
             <p class="headline">${esc(vm.headline || (vm.speciesName ? `Fishing for ${vm.speciesName}` : ""))}</p>
             ${conf}
-            <div class="meta">${water}${pressure}</div>
+            <div class="meta">${water}${pressure}${config.show_wind && vm.wind ? renderWind(vm) : ""}</div>
             ${next}
           </div>
         </div>
@@ -586,6 +631,7 @@
   FishingCard.logic = {
     VERSION, BANDS, GAUGE, esc, bandFor, gaugeFill, parseWallClock, formatClock, formatInstant, formatNumber, formatDuration,
     countdown, topFactors, sparkline, findEntities, normaliseConfig, viewModel, render, toNum,
+    COMPASS, compass, compassWords, renderWind,
   };
 
   if (typeof customElements !== "undefined" && !customElements.get(TAG)) customElements.define(TAG, FishingCard);

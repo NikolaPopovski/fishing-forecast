@@ -15,6 +15,15 @@ from .model.context import SpotContext
 
 FEEDING_BANDS = ("fair", "good", "excellent")
 
+COMPASS = ("N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW")
+
+
+def compass_point(degrees: float | None) -> str | None:
+    """The 16-point compass name for a bearing (the direction the wind blows FROM), None if unknown."""
+    if degrees is None:
+        return None
+    return COMPASS[int(((float(degrees) % 360.0) + 11.25) // 22.5) % 16]
+
 
 def _iso(dt: datetime | None) -> str | None:
     return None if dt is None else dt.isoformat()
@@ -75,6 +84,11 @@ def compute(ctx: SpotContext, now: datetime, species_id: str, *, hours: int = 48
             "in_window": None if sol is None else sol.in_window,
             "intensity": None if sol is None else round(sol.intensity, 2),
             "label": None if sol is None else sol.label,
+        },
+        "wind": {
+            "speed": None if ev.obs.get("wind_speed") is None else round(ev.obs["wind_speed"], 1),     # m/s
+            "direction": None if ev.obs.get("wind_dir") is None else round(ev.obs["wind_dir"]) % 360,   # degrees, FROM
+            "cardinal": compass_point(ev.obs.get("wind_dir")),
         },
         "sun_altitude": round(ev.sun_altitude, 1),
         "moonshine": round(ev.moonshine, 2),
