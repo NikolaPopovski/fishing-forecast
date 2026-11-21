@@ -125,6 +125,23 @@ class HacsReadinessTest(unittest.TestCase):
         self.assertEqual(keys[:2], ["domain", "name"])
         self.assertEqual(keys[2:], sorted(keys[2:]), "hassfest wants the other manifest keys alphabetical")
 
+    def test_the_brand_icon_is_a_valid_256_png_and_is_what_the_script_draws(self):
+        import struct
+
+        icon = (FISHING_DIR / "brand" / "icon.png").read_bytes()
+        self.assertEqual(icon[:8], bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))      # the PNG signature
+        width, height, depth, colour = struct.unpack(">IIBB", icon[16:26])
+        self.assertEqual((width, height, depth, colour), (256, 256, 8, 6))          # 256 square, 8-bit RGBA
+        spec = importlib.util.spec_from_file_location("fishing_make_icon", ROOT / "scripts" / "make_icon.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(module.png(module.render()), icon, "run `python scripts/make_icon.py` to regenerate the icon")
+
+    def test_the_icon_ships_in_the_package(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with zipfile.ZipFile(load_packager().build(Path(tmp))) as z:
+                self.assertIn("fishing/brand/icon.png", z.namelist())
+
     def test_there_is_a_licence_and_the_readme_links_it(self):
         licence = (ROOT / "LICENSE").read_text(encoding="utf-8")
         self.assertTrue(licence.startswith("MIT License"))
